@@ -3,6 +3,10 @@
 #include <QPushButton>
 #include <QString> // 确保引入了QString，Windows用GBK 编码，而现代代码通常用UTF-8，之前出现了乱码
 
+//加音效
+#include <QUrl>
+#include <QSoundEffect>
+
 trPet::trPet(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -41,6 +45,11 @@ trPet::trPet(QWidget* parent)
     connect(btnSpawnDoG, &QPushButton::clicked, this, [=]() {
         BasePet* dog = new BasePet(Role_DoG, "tr-pet_material/dog.png");
         dog->show();
+        // 神吞独有的压迫感出场音效
+        QSoundEffect* effect = new QSoundEffect(this);
+        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Universal_Collapse.wav"));
+        effect->setVolume(1.0f); // 1.0是最大音量
+        effect->play();
         });
     //召唤至尊女巫，灾厄
     QPushButton* btnSCal = new QPushButton(QString::fromLocal8Bit("召唤至尊女巫，灾厄 SCal " ), this);

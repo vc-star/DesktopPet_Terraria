@@ -7,6 +7,9 @@
 #include <QTimer>
 #include <QGuiApplication> 
 #include <QPropertyAnimation> // 用于突变体冲刺残影淡出特效
+//加音效
+#include <QUrl>
+#include <QSoundEffect>
 
 QList<BasePet*> BasePet::s_petList;
 
@@ -194,8 +197,14 @@ void BasePet::onClick()
             m_textLabel->setText(QString::fromLocal8Bit(" ↑→→→↑→↓↓↓↓↓↓↓"));
             m_textLabel->setStyleSheet("color: #FF0000; font-weight: bold; font-size: 25px;");
             m_textLabel->show();
+            //音乐
+            QSoundEffect * effect = new QSoundEffect(this);
+            effect->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Plantera.wav"));
+            effect->setVolume(1.0f); // 1.0是最大音量
+            effect->play();
             return;
         }
+
     }
 
     // 如果被点到的是哥布林工匠
