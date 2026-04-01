@@ -1,4 +1,4 @@
-# tr-Pet
+# DesktopPet_Terraria
 该项目是基于 C++ 和 Qt 框架开发的一款Terraria桌面互动宠物。
 ## ✨ 核心功能
 * **桌宠角色**：
