@@ -76,6 +76,7 @@ private:
 
     //记录世纪之花是否进入了二阶段
     bool m_isPhase2;
+    bool m_isAwakened = false;
 };
 
 //礼花

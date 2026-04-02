@@ -25,11 +25,11 @@ trPet::trPet(QWidget* parent)
         slime->show();
         }); 
     //召唤世纪之花
-    QPushButton* btnPlantera = new QPushButton(QString::fromLocal8Bit("召唤世纪之花 "), this);
+    QPushButton* btnPlantera = new QPushButton(QString::fromLocal8Bit("世纪之花 "), this);
     btnPlantera->setGeometry(50, 110, 200, 50);
     connect(btnPlantera, &QPushButton::clicked, this, [=]() {
-        // 一阶段的gif
-        BasePet* plantera = new BasePet(Role_Plantera, "tr-pet_material/plantera1.gif");
+        // 世花球茎
+        BasePet* plantera = new BasePet(Role_Plantera, "tr-pet_material/Plantera's_Bulb.gif");
         plantera->show();
         });
     //召唤机械骷髅王

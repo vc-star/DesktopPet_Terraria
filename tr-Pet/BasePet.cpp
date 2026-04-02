@@ -26,9 +26,9 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     // 准备用来显示图片的控件
     m_imageLabel = new QLabel(this);
     //m_imageLabel->setScaledContents(true); // 允许图片自动缩放填充，不行 这样会使图片变形
-     
+
      //设定桌宠的理想大小
-    int targetSize ;
+    int targetSize;
     if (m_role == Role_DoG)
         targetSize = 600;
     else if (m_role == Role_RainbowSlime)
@@ -37,8 +37,10 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
         targetSize = 550;
     else if (m_role == Role_Mutant)
         targetSize = 300;
-    else 
-        targetSize = 180; 
+    else if (m_role == Role_Plantera)
+        targetSize = 100;
+    else
+        targetSize = 180;
     // 判断是动图还是静图，分别处理
     if (imagePath.endsWith(".gif", Qt::CaseInsensitive)) {
         m_movie = new QMovie(imagePath);
@@ -62,7 +64,7 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
         m_imageLabel->setPixmap(pix);
     }
 
-   
+
     //准备字幕框
     m_textLabel = new QLabel(this);
     m_textLabel->setAlignment(Qt::AlignCenter); // 让文字居中对齐
@@ -74,12 +76,12 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(5);
     // 判断是谁
-    if (m_role == Role_Goblin||m_role == Role_Nurse || m_role == Role_ArmsDealer)
+    if (m_role == Role_Goblin || m_role == Role_Nurse || m_role == Role_ArmsDealer)
     {
         layout->addWidget(m_textLabel);  // 先文字
         layout->addWidget(m_imageLabel); // 再图片
     }
-    else 
+    else
     {
         layout->addWidget(m_imageLabel); // 先图片
         layout->addWidget(m_textLabel);  // 再文字
@@ -87,7 +89,7 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
 
     //默认先给个 100x100 的大小（以后可以根据是BOSS还是NPC动态调整）
     //resize(100, 100);依然是图片变形问题
-    
+
     if (m_role == Role_DoG) {
         // 设置神吞的台词
         m_textLabel->setText(QString::fromLocal8Bit("你不是神...但你的灵魂仍是我的盛宴！\n你确实出类拔萃，但别狂妄自大！ \n 还没完呢！小子！\n神！不惧死亡！"));
@@ -95,7 +97,7 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
         m_textLabel->setStyleSheet("color: #a349a4; font-weight: bold; font-size: 20px;");
         m_textLabel->show(); // 显示字幕
     }
-    
+
     //初始化大脑和双腿
     m_actionTimer = new QTimer(this);
     m_moveAnimation = new QPropertyAnimation(this, "pos", this); // "pos"代表我们要改变窗口的坐标位置
@@ -125,9 +127,9 @@ void BasePet::mousePressEvent(QMouseEvent* event) {
         m_isDragging = true;
         // 算出鼠标点下的位置和图片左上角的距离差
         m_dragPosition = event->globalPosition().toPoint() - this->frameGeometry().topLeft();
-        
+
         // 鼠标抓住它时，强行停止跳跃动画
-        if (m_moveAnimation->state() == QAbstractAnimation::Running) 
+        if (m_moveAnimation->state() == QAbstractAnimation::Running)
         {
             m_moveAnimation->stop();
         }
@@ -158,53 +160,65 @@ void BasePet::mouseReleaseEvent(QMouseEvent* event) {
     event->accept();
 }
 
-void BasePet::onClick() 
+void BasePet::onClick()
 {
     // 如果被点到的是世纪之花
-    if (m_role == Role_Plantera && !m_isPhase2) 
+    if (m_role == Role_Plantera && !m_isAwakened)
     {
-        m_isPhase2 = true; // 标记进入二阶段，以后悬停就不会变回一阶段了
+        m_isAwakened = true; // 标记进入一阶段
+        m_textLabel->hide(); // 瞬间掐断悬停字幕
 
-        //停掉并删除一阶段的花苞动图
-        if (m_movie) 
-        {
+        if (m_movie) {
             m_movie->stop();
             delete m_movie;
             m_movie = nullptr;
         }
-        m_imageLabel->clear(); // 清空画框残留
-        //加载二阶段动图
-        m_movie = new QMovie("tr-pet_material/plantera2.gif");
-        m_movie->setParent(this); 
+        m_imageLabel->clear();
 
-        // 把二阶段gif缩放到合适的大小
-        int targetSize = 250;
-        // 获取原始尺寸
-        m_movie->jumpToFrame(0);
-        QSize originalSize = m_movie->currentImage().size();
-        if (originalSize.isValid())
-        {
-            //保持比例智能缩放
-            QSize scaledSize = originalSize.scaled(targetSize, targetSize, Qt::KeepAspectRatio);
-            m_movie->setScaledSize(scaledSize);
-            // 把新动图装进主画框，并开始播放
-            m_imageLabel->setMovie(m_movie);
+        // 加载一阶段动图
+        m_movie = new QMovie("tr-pet_material/plantera1.gif");
+        m_movie->setParent(this);
+        m_movie->start(); // 必须先 start 才能拿到正确尺寸！
+
+        QSize size1 = m_movie->currentImage().size();
+        if (size1.isValid()) {
+            m_movie->setScaledSize(size1.scaled(200, 200, Qt::KeepAspectRatio));
+        }
+        m_imageLabel->setMovie(m_movie);
+        this->adjustSize();
+
+        // 七秒后自动进二阶段
+        QTimer::singleShot(7000, this, [=]() {
+            if (m_movie) {
+                m_movie->stop();
+                delete m_movie;
+            }
+            m_movie = new QMovie("tr-pet_material/plantera2.gif");
+            m_movie->setParent(this);
             m_movie->start();
-            // 刷新一下画框，确保刚好包裹住图片，不留黑边
-            m_imageLabel->adjustSize();
+
+            // 改名 size2 防止变量重名报错！
+            QSize size2 = m_movie->currentImage().size();
+            if (size2.isValid()) {
+                m_movie->setScaledSize(size2.scaled(220, 220, Qt::KeepAspectRatio));
+            }
+            m_imageLabel->setMovie(m_movie);
             this->adjustSize();
 
-            m_textLabel->setText(QString::fromLocal8Bit(" ↑→→→↑→↓↓↓↓↓↓↓"));
-            m_textLabel->setStyleSheet("color: #FF0000; font-weight: bold; font-size: 25px;");
+            m_textLabel->setText(QString::fromLocal8Bit("↑→→→↑→↓↓↓↓↓"));
+            m_textLabel->setStyleSheet("color: #FF0000; font-weight: bold; font-size: 30px;");
             m_textLabel->show();
-            //音乐
-            QSoundEffect * effect = new QSoundEffect(this);
-            effect->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Plantera.wav"));
-            effect->setVolume(1.0f); // 1.0是最大音量
-            effect->play();
-            return;
-        }
 
+            m_isPhase2 = true; // 标记正式进入二阶段
+            });
+
+        //音乐
+        QSoundEffect* effect = new QSoundEffect(this);
+        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Plantera.wav"));
+        effect->setVolume(1.0f); // 1.0是最大音量
+        effect->play();
+
+        return;
     }
 
     // 如果被点到的是哥布林工匠
@@ -230,7 +244,7 @@ void BasePet::onClick()
             });
     }
 
-	//如果被点到的是派对女孩
+    //如果被点到的是派对女孩
     if (m_role == Role_PartyGirl) {
         // 算出派对女孩在屏幕上的中心坐标
         QPoint centerPos = this->geometry().center();
@@ -240,7 +254,7 @@ void BasePet::onClick()
         return;
     }
 
-	//如果被点到的是税收官
+    //如果被点到的是税收官
     if (m_role == Role_TaxCollector) {
         // 创建一个悬浮的纯净画框（无边框、置顶、透明背景）
         QLabel* moneyLabel = new QLabel();
@@ -268,8 +282,8 @@ void BasePet::onClick()
         return;
     }
 
-	//如果被点到的是操作员
-    if (m_role == Role_Operator) 
+    //如果被点到的是操作员
+    if (m_role == Role_Operator)
     {
         QLabel* bagLabel = new QLabel();
         bagLabel->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput);
@@ -314,7 +328,7 @@ void BasePet::onClick()
     }
 
     //如果被点到的是突变体
-    if (m_role == Role_Mutant) 
+    if (m_role == Role_Mutant)
     {
         if (this->property("isDashing").toBool()) return; // 防止狂点导致他在天上乱飞
         this->setProperty("isDashing", true);
@@ -414,7 +428,7 @@ BasePet::~BasePet() {
 // ================= CP =================
 void BasePet::checkInteractions() {
     // 如果我是护士，我就去满屏幕找军火商
-    if (m_role == Role_Nurse || m_role == Role_ArmsDealer) 
+    if (m_role == Role_Nurse || m_role == Role_ArmsDealer)
     {
         bool foundCP = false;
 
@@ -446,44 +460,44 @@ void BasePet::checkInteractions() {
                 }
             }
         }
-            //两人互相靠近：加载并播放爱心动画
-            if (foundCP) 
+        //两人互相靠近：加载并播放爱心动画
+        if (foundCP)
+        {
+            // 如果目前没有显示爱心，就加载它
+            if (m_textLabel->isHidden())
             {
-                // 如果目前没有显示爱心，就加载它
-                if (m_textLabel->isHidden())
+                m_textLabel->setText(""); // 清空文字
+
+                //加载爱心GIF
+                QMovie* heartMovie = m_textLabel->movie();
+                if (!heartMovie)
                 {
-                    m_textLabel->setText(""); // 清空文字
-
-                    //加载爱心GIF
-                    QMovie* heartMovie = m_textLabel->movie();
-                    if (!heartMovie) 
-                    {
-                        // 第一次靠近，老老实实加载
-                        heartMovie = new QMovie("tr-pet_material/Emotion_Love.gif", QByteArray(), this);
-                        heartMovie->setScaledSize(QSize(80, 80));
-                        m_textLabel->setMovie(heartMovie);
-                    }
-
-                    heartMovie->start();
-                    m_textLabel->show();
+                    // 第一次靠近，老老实实加载
+                    heartMovie = new QMovie("tr-pet_material/Emotion_Love.gif", QByteArray(), this);
+                    heartMovie->setScaledSize(QSize(80, 80));
+                    m_textLabel->setMovie(heartMovie);
                 }
+
+                heartMovie->start();
+                m_textLabel->show();
             }
-            else
+        }
+        else
+        {
+            // 如果走远了
+            if (!m_textLabel->isHidden())
             {
-                // 如果走远了
-                if (!m_textLabel->isHidden()) 
-                {
-                    m_textLabel->hide();
-                    //只暂停，不 delete！保留动图，下次直接复用！
-                    if (m_textLabel->movie()) 
-                        m_textLabel->movie()->stop();
-                }
-                //如果他们还在扭着头看对方，就让他们转回来
-                if (m_isFlipped) {
-                    m_isFlipped = false;  // 恢复“不翻转”的状态
-                    updateImageFlip();    // 重新贴正向的图片
-                }
+                m_textLabel->hide();
+                //只暂停，不 delete！保留动图，下次直接复用！
+                if (m_textLabel->movie())
+                    m_textLabel->movie()->stop();
             }
+            //如果他们还在扭着头看对方，就让他们转回来
+            if (m_isFlipped) {
+                m_isFlipped = false;  // 恢复“不翻转”的状态
+                updateImageFlip();    // 重新贴正向的图片
+            }
+        }
     }
 
     // ================= 强盗与哥布林 =================
@@ -514,7 +528,7 @@ void BasePet::checkInteractions() {
             // 如果是“刚靠近”（之前不在附近）
             if (!wasNear) {
                 this->setProperty("isNear", true); // 记录状态：已经靠近了，防止重复触发
-                if (m_role == Role_Goblin) 
+                if (m_role == Role_Goblin)
                 {
                     // 哥布林：头顶冒出生气的 GIF，持续显示
                     m_textLabel->setText("");
@@ -527,7 +541,7 @@ void BasePet::checkInteractions() {
                     angryMovie->start();
                     m_textLabel->show();
                 }
-                else if (m_role == Role_Bandit) 
+                else if (m_role == Role_Bandit)
                 {
                     // 强盗：头顶爆出金币图片，3秒后消失
                     QLabel* moneyLabel = new QLabel();
@@ -553,21 +567,21 @@ void BasePet::checkInteractions() {
                 }
             }
         }
-        else 
+        else
         {
             // 走远了
-            if (wasNear) 
+            if (wasNear)
             {
                 this->setProperty("isNear", false); // 状态重置为“远离”
                 // 哥布林消气，隐藏生气图片
-                if (m_role == Role_Goblin) 
+                if (m_role == Role_Goblin)
                 {
                     m_textLabel->hide();
                     if (m_textLabel->movie())
                         m_textLabel->movie()->stop();
                 }
                 // 转头，不理对方
-                if (m_isFlipped) 
+                if (m_isFlipped)
                 {
                     m_isFlipped = false;
                     updateImageFlip();
@@ -578,18 +592,18 @@ void BasePet::checkInteractions() {
 }
 
 // ================= 图片镜像翻转 =================
-QPixmap BasePet::getFlippedPixmap(const QPixmap& pix) 
+QPixmap BasePet::getFlippedPixmap(const QPixmap& pix)
 {
     // 使用 QImage 的 flipped
     return QPixmap::fromImage(pix.toImage().flipped(Qt::Horizontal));
 }
 void BasePet::updateImageFlip() {
     if (!m_originalPixmap.isNull()) {
-        if (m_isFlipped) 
+        if (m_isFlipped)
             // 如果需要转身，就把角色的原图翻转后贴上去
             m_imageLabel->setPixmap(getFlippedPixmap(m_originalPixmap));
-        
-        else 
+
+        else
             // 如果不需要转身，就贴正向的原图
             m_imageLabel->setPixmap(m_originalPixmap);
     }
@@ -597,20 +611,26 @@ void BasePet::updateImageFlip() {
 
 // ================= 鼠标悬停 =================
 void BasePet::enterEvent(QEnterEvent* event) {
-    // 如果是世纪之花，且还是一阶段（没被点过）
-    if (m_role == Role_Plantera && !m_isPhase2) {
-        m_textLabel->setText(QString::fromLocal8Bit("世纪之花灯泡 "));
-        m_textLabel->setStyleSheet("color: #FF69B4; font-size: 20px;");
-        m_textLabel->show();
+    // 如果是世纪之花
+    if (m_role == Role_Plantera) {
+        if (!m_isAwakened) {
+            // 1. 花苞状态：显示名字
+            m_textLabel->setText(QString::fromLocal8Bit("世纪之花灯泡"));
+            m_textLabel->setStyleSheet("color: #FF69B4; font-size: 20px;");
+            m_textLabel->show();
+        }
+        else if (m_isAwakened && !m_isPhase2) 
+            m_textLabel->hide();
+        else if (m_isPhase2) 
+            m_textLabel->show();
+        return; 
     }
-    QWidget::enterEvent(event);
 }
 void BasePet::leaveEvent(QEvent* event) {
-    // 鼠标移开时，如果还是一阶段，就把字藏起来
-    if (m_role == Role_Plantera && !m_isPhase2) {
-        m_textLabel->hide();
+    if (m_role == Role_Plantera && m_isPhase2) {
+        return;
     }
-    QWidget::leaveEvent(event);
+    m_textLabel->hide();
 }
 
 // ================= 礼花爆炸 =================
@@ -761,4 +781,3 @@ void DanmakuWidget::paintEvent(QPaintEvent* event) {
         for (const auto& b : m_smallBullets) drawBullet(b, m_smallMovie, 30.0f); // 小弹幕大小为 40
     }
 }
-
