@@ -13,7 +13,7 @@
 enum PetRole {
     Role_RainbowSlime,    // 史莱姆
     Role_Plantera,        // 世花
-    Role_SkeletronPrime,  // 机械骷髅王
+    Role_Skeletron,       // 骷髅王
     Role_DoG,             // 神吞
     Role_SCal,            // 至尊灾厄
     Role_Mutant,          // 突变体

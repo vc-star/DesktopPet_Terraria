@@ -33,7 +33,7 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
         targetSize = 600;
     else if (m_role == Role_RainbowSlime)
         targetSize = 130;
-    else if (m_role == Role_SkeletronPrime)
+    else if (m_role == Role_Skeletron)
         targetSize = 550;
     else if (m_role == Role_Mutant)
         targetSize = 300;

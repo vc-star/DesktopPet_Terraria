@@ -33,10 +33,10 @@ trPet::trPet(QWidget* parent)
         plantera->show();
         });
     //召唤机械骷髅王
-    QPushButton* btnSkeletron = new QPushButton(QString::fromLocal8Bit("召唤机械骷髅王 "), this);
+    QPushButton* btnSkeletron = new QPushButton(QString::fromLocal8Bit("召唤骷髅王 "), this);
     btnSkeletron->setGeometry(50, 160, 200, 50); 
     connect(btnSkeletron, &QPushButton::clicked, this, [=]() {
-        BasePet* skeletron = new BasePet(Role_SkeletronPrime, "tr-pet_material/skeletron.png");
+        BasePet* skeletron = new BasePet(Role_Skeletron, "tr-pet_material/skeletron.png");
         skeletron->show();
         });
     //召唤神吞(DoG)
