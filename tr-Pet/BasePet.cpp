@@ -13,6 +13,27 @@
 
 QList<BasePet*> BasePet::s_petList;
 
+// 初始化全局指针
+QSoundEffect* BasePet::s_bgmPlayer = nullptr;
+// 播放全局BGM
+void BasePet::playBGM() 
+{
+    if (!s_bgmPlayer) {
+        s_bgmPlayer = new QSoundEffect();
+        s_bgmPlayer->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Overworld_Day.wav"));
+        s_bgmPlayer->setLoopCount(QSoundEffect::Infinite); // 设置为无限循环洗脑！
+        s_bgmPlayer->setVolume(0.5f); // 背景音乐声音设为0.3
+    }
+    s_bgmPlayer->play();
+}
+
+// 停止全局BGM
+void BasePet::stopBGM() {
+    if (s_bgmPlayer) {
+        s_bgmPlayer->stop();
+    }
+}
+
 BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     : QWidget(parent), m_role(role), m_isDragging(false), m_movie(nullptr)
 {
@@ -39,6 +60,8 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
         targetSize = 300;
     else if (m_role == Role_Plantera)
         targetSize = 100;
+    else if (m_role == Role_SCal)
+        targetSize = 270;
     else
         targetSize = 180;
     // 判断是动图还是静图，分别处理
@@ -90,7 +113,8 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     //默认先给个 100x100 的大小（以后可以根据是BOSS还是NPC动态调整）
     //resize(100, 100);依然是图片变形问题
 
-    if (m_role == Role_DoG) {
+    if (m_role == Role_DoG) 
+    {
         // 设置神吞的台词
         m_textLabel->setText(QString::fromLocal8Bit("你不是神...但你的灵魂仍是我的盛宴！\n你确实出类拔萃，但别狂妄自大！ \n 还没完呢！小子！\n神！不惧死亡！"));
         //紫色字体，加粗
@@ -102,7 +126,8 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     m_actionTimer = new QTimer(this);
     m_moveAnimation = new QPropertyAnimation(this, "pos", this); // "pos"代表我们要改变窗口的坐标位置
     //史莱姆跳来跳去
-    if (m_role == Role_RainbowSlime) {
+    if (m_role == Role_RainbowSlime) 
+    {
         connect(m_actionTimer, &QTimer::timeout, this, [=]() {
             if (!m_isDragging) { // 如果正在用鼠标拖它，就不动
                 randomJump();
@@ -165,6 +190,13 @@ void BasePet::onClick()
     // 如果被点到的是世纪之花
     if (m_role == Role_Plantera && !m_isAwakened)
     {
+        // 掐断白天的肝疼小曲！Boss战开始！
+        BasePet::stopBGM();
+        //音乐
+        QSoundEffect* effect = new QSoundEffect(this);
+        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Plantera.wav"));
+        effect->setVolume(1.0f); // 1.0是最大音量
+        effect->play();
         m_isAwakened = true; // 标记进入一阶段
         m_textLabel->hide(); // 瞬间掐断悬停字幕
 
@@ -181,9 +213,8 @@ void BasePet::onClick()
         m_movie->start(); // 必须先 start 才能拿到正确尺寸！
 
         QSize size1 = m_movie->currentImage().size();
-        if (size1.isValid()) {
+        if (size1.isValid()) 
             m_movie->setScaledSize(size1.scaled(200, 200, Qt::KeepAspectRatio));
-        }
         m_imageLabel->setMovie(m_movie);
         this->adjustSize();
 
@@ -211,18 +242,21 @@ void BasePet::onClick()
 
             m_isPhase2 = true; // 标记正式进入二阶段
             });
-
-        //音乐
-        QSoundEffect* effect = new QSoundEffect(this);
-        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Plantera.wav"));
-        effect->setVolume(1.0f); // 1.0是最大音量
-        effect->play();
-
         return;
     }
 
     // 如果被点到的是哥布林工匠
-    if (m_role == Role_Goblin) {
+    if (m_role == Role_Goblin) 
+    {
+        // 【新增】：专属的重铸音效（使用无敌的静态播放器）
+        static QSoundEffect* reforgeEffect = nullptr;
+        if (!reforgeEffect) {
+            reforgeEffect = new QSoundEffect(this);
+            reforgeEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Item.wav"));
+            reforgeEffect->setVolume(1.0f);
+        }
+        reforgeEffect->play();
+
         //准备一个“负面词库”
         QStringList badWords = {
             QString::fromLocal8Bit("碎裂 "),
@@ -234,7 +268,7 @@ void BasePet::onClick()
         int randomIndex = QRandomGenerator::global()->bounded(badWords.size());
 
         // 把抽到的词汇写到字幕框里，变成红色，假装是扣钱的提示！
-        m_textLabel->setText(badWords[randomIndex] + " (-10 G) ");
+        m_textLabel->setText(badWords[randomIndex] + " (-79 G) ");
         m_textLabel->setStyleSheet("color: #FF4500; font-weight: bold; font-size: 20px;");
         m_textLabel->show();
 
@@ -255,7 +289,17 @@ void BasePet::onClick()
     }
 
     //如果被点到的是税收官
-    if (m_role == Role_TaxCollector) {
+    if (m_role == Role_TaxCollector) 
+    {     
+        //金币音效(【终极解法：静态播放器】只读取一次硬盘，完美解决加载延迟和没声音！)
+        static QSoundEffect* coinEffect = nullptr;
+        if (!coinEffect) {
+            coinEffect = new QSoundEffect(this);
+            coinEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Coin.wav"));
+            coinEffect->setVolume(1.0f);
+        }
+        coinEffect->play();
+
         // 创建一个悬浮的纯净画框（无边框、置顶、透明背景）
         QLabel* moneyLabel = new QLabel();
         moneyLabel->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput);
@@ -279,6 +323,7 @@ void BasePet::onClick()
         moneyLabel->show();
         //1.5秒后，系统自动把这个画框销毁！
         QTimer::singleShot(1500, moneyLabel, &QLabel::deleteLater);
+
         return;
     }
 
@@ -423,6 +468,33 @@ void BasePet::randomJump() {
 BasePet::~BasePet() {
     // 宠物被关闭时，从花名册里划掉名字
     s_petList.removeOne(this);
+}
+
+// ================= 鼠标悬停 =================
+void BasePet::enterEvent(QEnterEvent* event) {
+    // 如果是世纪之花
+    if (m_role == Role_Plantera) {
+        if (!m_isAwakened) {
+            // 1. 花苞状态：显示名字
+            m_textLabel->setText(QString::fromLocal8Bit("世纪之花灯泡 "));
+            m_textLabel->setStyleSheet("color: #FF69B4; font-size: 20px;");
+            m_textLabel->show();
+        }
+        else if (m_isAwakened && !m_isPhase2)
+            m_textLabel->hide();
+        else if (m_isPhase2)
+            m_textLabel->show();
+        return;
+    }
+}
+void BasePet::leaveEvent(QEvent* event)
+{
+    if (m_role == Role_DoG)
+        return;
+    if (m_role == Role_Plantera && m_isPhase2) {
+        return;
+    }
+    m_textLabel->hide();
 }
 
 // ================= CP =================
@@ -607,30 +679,6 @@ void BasePet::updateImageFlip() {
             // 如果不需要转身，就贴正向的原图
             m_imageLabel->setPixmap(m_originalPixmap);
     }
-}
-
-// ================= 鼠标悬停 =================
-void BasePet::enterEvent(QEnterEvent* event) {
-    // 如果是世纪之花
-    if (m_role == Role_Plantera) {
-        if (!m_isAwakened) {
-            // 1. 花苞状态：显示名字
-            m_textLabel->setText(QString::fromLocal8Bit("世纪之花灯泡"));
-            m_textLabel->setStyleSheet("color: #FF69B4; font-size: 20px;");
-            m_textLabel->show();
-        }
-        else if (m_isAwakened && !m_isPhase2) 
-            m_textLabel->hide();
-        else if (m_isPhase2) 
-            m_textLabel->show();
-        return; 
-    }
-}
-void BasePet::leaveEvent(QEvent* event) {
-    if (m_role == Role_Plantera && m_isPhase2) {
-        return;
-    }
-    m_textLabel->hide();
 }
 
 // ================= 礼花爆炸 =================

@@ -8,6 +8,8 @@
 #include <QPropertyAnimation>
 #include <QList> 
 #include <QEnterEvent> // 用来支持鼠标悬停
+#include <QSoundEffect>
+#include <QUrl>
 
 // 这里把所有角色都列出来，以后加新角色只要在这里加个名字就行
 enum PetRole {
@@ -38,6 +40,10 @@ public:
     static QList<BasePet*> s_petList;
     //让别人能知道自己的身份
     PetRole getRole() const { return m_role; }
+    //全局背景音乐总控
+    static QSoundEffect* s_bgmPlayer;
+    static void playBGM();
+    static void stopBGM();
 
 protected:
     // 重写鼠标的三大事件，为了能用鼠标拖着它满屏幕跑
@@ -75,7 +81,7 @@ private:
     void checkInteractions();
 
     //记录世纪之花是否进入了二阶段
-    bool m_isPhase2;
+    bool m_isPhase2 = false ;
     bool m_isAwakened = false;
 };
 
