@@ -42,7 +42,7 @@ public:
     PetRole getRole() const { return m_role; }
     //È«¾Ö±³¾°ÒôÀÖ×Ü¿Ø
     static QSoundEffect* s_bgmPlayer;
-    static void playBGM();
+    static void playGlobalMusic(QString musicPath);
     static void stopBGM();
 
 protected:

@@ -15,16 +15,33 @@ QList<BasePet*> BasePet::s_petList;
 
 // 初始化全局指针
 QSoundEffect* BasePet::s_bgmPlayer = nullptr;
-// 播放全局BGM
-void BasePet::playBGM() 
-{
+// 全局万能点唱机
+void BasePet::playGlobalMusic(QString musicPath) {
     if (!s_bgmPlayer) {
         s_bgmPlayer = new QSoundEffect();
-        s_bgmPlayer->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Overworld_Day.wav"));
-        s_bgmPlayer->setLoopCount(QSoundEffect::Infinite); // 设置为无限循环洗脑！
-        s_bgmPlayer->setVolume(0.5f); // 背景音乐声音设为0.3
+        s_bgmPlayer->setLoopCount(QSoundEffect::Infinite); // 依然无限循环
+        s_bgmPlayer->setVolume(0.3f);
     }
-    s_bgmPlayer->play();
+    else {
+        // 【核心操作】：如果点唱机已经存在，不管它在播什么，先给我强行闭嘴！
+        s_bgmPlayer->stop();
+        s_bgmPlayer->disconnect(); // 切断之前的加载监听，防止混乱
+    }
+
+    // 换上最新召唤的 Boss（或白天）的音乐磁带
+    s_bgmPlayer->setSource(QUrl::fromLocalFile(musicPath));
+
+    // 重新监听加载状态（防吞音效神技）
+    QObject::connect(s_bgmPlayer, &QSoundEffect::statusChanged, []() {
+        if (s_bgmPlayer->status() == QSoundEffect::Ready) {
+            s_bgmPlayer->play();
+        }
+        });
+
+    // 如果加载得够快，直接开播
+    if (s_bgmPlayer->status() == QSoundEffect::Ready) {
+        s_bgmPlayer->play();
+    }
 }
 
 // 停止全局BGM
@@ -193,10 +210,8 @@ void BasePet::onClick()
         // 掐断白天的肝疼小曲！Boss战开始！
         BasePet::stopBGM();
         //音乐
-        QSoundEffect* effect = new QSoundEffect(this);
-        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Music-Plantera.wav"));
-        effect->setVolume(1.0f); // 1.0是最大音量
-        effect->play();
+        BasePet::playGlobalMusic("tr-pet_material/Music-Plantera.wav");
+
         m_isAwakened = true; // 标记进入一阶段
         m_textLabel->hide(); // 瞬间掐断悬停字幕
 
