@@ -40,7 +40,7 @@ trPet::trPet(QWidget* parent)
         skeletron->show();
         //掐断白天的肝疼小曲！Boss战开始！
         BasePet::stopBGM();
-        //音乐
+        //Ezfic
         QSoundEffect* effect = new QSoundEffect(this);
         effect->setSource(QUrl::fromLocalFile("tr-pet_material/Ezfic.wav"));
         effect->setVolume(1.0f); // 1.0是最大音量
@@ -54,7 +54,7 @@ trPet::trPet(QWidget* parent)
         dog->show();
         //掐断白天的肝疼小曲！Boss战开始！
         BasePet::stopBGM();
-        // 神吞独有的压迫感出场音效
+        // 神吞音乐
         QSoundEffect* effect = new QSoundEffect(this);
         effect->setSource(QUrl::fromLocalFile("tr-pet_material/Universal_Collapse.wav"));
         effect->setVolume(1.0f); // 1.0是最大音量
@@ -66,6 +66,13 @@ trPet::trPet(QWidget* parent)
     connect(btnSCal, &QPushButton::clicked, this, [=]() {
         BasePet* scal = new BasePet(Role_SCal, "tr-pet_material/scal.gif");
         scal->show();
+        //掐断白天的肝疼小曲！Boss战开始！
+        BasePet::stopBGM();
+        // 灾厄音乐
+        QSoundEffect* effect = new QSoundEffect(this);
+        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Stained Brutal Calamity.wav"));
+        effect->setVolume(1.0f); // 1.0是最大音量
+        effect->play();
         });
     //召唤突变体
     QPushButton* btnMutant = new QPushButton(QString::fromLocal8Bit("召唤突变体 "), this);
@@ -73,6 +80,13 @@ trPet::trPet(QWidget* parent)
     connect(btnMutant, &QPushButton::clicked, this, [=]() {
         BasePet* mutant = new BasePet(Role_Mutant, "tr-pet_material/mutant.gif");
         mutant->show();
+        //掐断白天的肝疼小曲！Boss战开始！
+        BasePet::stopBGM();
+        //突变体音乐
+        QSoundEffect* effect = new QSoundEffect(this);
+        effect->setSource(QUrl::fromLocalFile("tr-pet_material/rePrologue.wav"));
+        effect->setVolume(1.0f); // 1.0是最大音量
+        effect->play();
         });
     // 召唤护士
     QPushButton* btnNurse = new QPushButton(QString::fromLocal8Bit("召唤护士 "), this);
