@@ -28,6 +28,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnPlantera = new QPushButton(QString::fromLocal8Bit("世纪之花 "), this);
     btnPlantera->setGeometry(50, 110, 200, 50);
     connect(btnPlantera, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_Plantera))
+            return;
         // 世花球茎
         BasePet* plantera = new BasePet(Role_Plantera, "tr-pet_material/Plantera's_Bulb.gif");
         plantera->show();
@@ -36,24 +38,21 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnSkeletron = new QPushButton(QString::fromLocal8Bit("召唤骷髅王 "), this);
     btnSkeletron->setGeometry(50, 160, 200, 50);
     connect(btnSkeletron, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_Skeletron))
+            return;
         BasePet* skeletron = new BasePet(Role_Skeletron, "tr-pet_material/skeletron.png");
         skeletron->show();
-        //掐断白天的肝疼小曲！Boss战开始！
-        BasePet::stopBGM();
         //Ezfic
-        QSoundEffect* effect = new QSoundEffect(this);
-        effect->setSource(QUrl::fromLocalFile("tr-pet_material/Ezfic.wav"));
-        effect->setVolume(1.0f); // 1.0是最大音量
-        effect->play();
+        BasePet::playGlobalMusic("tr-pet_material/Ezfic.wav");
         });
     //召唤神吞(DoG)
     QPushButton* btnSpawnDoG = new QPushButton(QString::fromLocal8Bit("召唤神明吞噬者(话痨虫(不是))"), this);
     btnSpawnDoG->setGeometry(260, 60, 200, 50);
     connect(btnSpawnDoG, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_DoG))
+            return;
         BasePet* dog = new BasePet(Role_DoG, "tr-pet_material/dog.png");
         dog->show();
-        //掐断白天的肝疼小曲！Boss战开始！
-        BasePet::stopBGM();
         // 神吞音乐
         BasePet::playGlobalMusic("tr-pet_material/Universal_Collapse.wav");
         });
@@ -61,28 +60,30 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnSCal = new QPushButton(QString::fromLocal8Bit("召唤至尊女巫，灾厄 SCal " ), this);
     btnSCal->setGeometry(260, 110, 200, 50);
     connect(btnSCal, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_SCal))
+            return;
         BasePet* scal = new BasePet(Role_SCal, "tr-pet_material/scal.gif");
         scal->show();
-        //掐断白天的肝疼小曲！Boss战开始！
-        BasePet::stopBGM();
-        // 灾厄音乐
+       // 灾厄音乐
         BasePet::playGlobalMusic("tr-pet_material/Stained Brutal Calamity.wav");
         });
     //召唤突变体
     QPushButton* btnMutant = new QPushButton(QString::fromLocal8Bit("召唤突变体 "), this);
     btnMutant->setGeometry(260, 160, 200, 50);
     connect(btnMutant, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_Mutant))
+            return;
         BasePet* mutant = new BasePet(Role_Mutant, "tr-pet_material/mutant.gif");
         mutant->show();
-        //掐断白天的肝疼小曲！Boss战开始！
-        BasePet::stopBGM();
-        //突变体音乐
+       //突变体音乐
         BasePet::playGlobalMusic("tr-pet_material/rePrologue.wav");
         });
     // 召唤护士
     QPushButton* btnNurse = new QPushButton(QString::fromLocal8Bit("召唤护士 "), this);
     btnNurse->setGeometry(50, 230, 95, 50); // 按钮放左边
     connect(btnNurse, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_Nurse))
+            return;
         BasePet* nurse = new BasePet(Role_Nurse, "tr-pet_material/nurse.png");
         nurse->show();
         });
@@ -90,6 +91,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnDealer = new QPushButton(QString::fromLocal8Bit("召唤军火商 "), this);
     btnDealer->setGeometry(155, 230, 95, 50); // 按钮放右边
     connect(btnDealer, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_ArmsDealer))
+            return;
         BasePet* dealer = new BasePet(Role_ArmsDealer, "tr-pet_material/dealer.png");
         dealer->show();
         });
@@ -97,6 +100,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnbandit = new QPushButton(QString::fromLocal8Bit("召唤强盗 "), this);
     btnbandit->setGeometry(50, 280, 200, 50);
     connect(btnbandit, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_Bandit))
+            return;
         BasePet* bandit = new BasePet(Role_Bandit, "tr-pet_material/bandit.png");
         bandit->show();
         });
@@ -104,6 +109,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnSpawnGoblin = new QPushButton(QString::fromLocal8Bit("召唤哥布林"), this);
     btnSpawnGoblin->setGeometry(50, 330, 200, 50);
     connect(btnSpawnGoblin, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_Goblin))
+            return;
         BasePet* goblin = new BasePet(Role_Goblin, "tr-pet_material/goblin.png");
         goblin->show();
         });
@@ -111,6 +118,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnPartyGirl = new QPushButton(QString::fromLocal8Bit("召唤派对女孩 "), this);
     btnPartyGirl->setGeometry(260, 230, 200, 50);
     connect(btnPartyGirl, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_PartyGirl))
+			return;
         BasePet* partyGirl = new BasePet(Role_PartyGirl, "tr-pet_material/partygirl.png");
         partyGirl->show();
         });
@@ -118,6 +127,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnTaxCollector = new QPushButton(QString::fromLocal8Bit("召唤税收官 "), this);
     btnTaxCollector->setGeometry(260, 280, 200, 50);
     connect(btnTaxCollector, &QPushButton::clicked, this, [=]() {
+        if (BasePet::isPetAlive(Role_TaxCollector))
+			return;
         BasePet* taxCollector = new BasePet(Role_TaxCollector, "tr-pet_material/taxcollector.png");
         taxCollector->show();
         });
@@ -125,6 +136,8 @@ trPet::trPet(QWidget* parent)
     QPushButton* btnOperator = new QPushButton(QString::fromLocal8Bit("召唤操作员 "), this);
     btnOperator->setGeometry(260, 330, 200, 50);
     connect(btnOperator, &QPushButton::clicked, this, [=]() {
+		if (BasePet::isPetAlive(Role_Operator))
+			return;
         BasePet* op = new BasePet(Role_Operator, "tr-pet_material/operator.png");
         op->show();
         });

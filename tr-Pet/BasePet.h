@@ -38,10 +38,13 @@ public:
     ~BasePet(); 
     //静态花名册，记录当前屏幕上所有的宠物
     static QList<BasePet*> s_petList;
+    //查户口
+    static bool isPetAlive(int roleToCheck);
     //让别人能知道自己的身份
     PetRole getRole() const { return m_role; }
     //全局背景音乐总控
     static QSoundEffect* s_bgmPlayer;
+    static QString s_currentBGMPath;//用来记住当前正在播放的音乐路径
     static void playGlobalMusic(QString musicPath);
     static void stopBGM();
 

@@ -13,10 +13,29 @@
 
 QList<BasePet*> BasePet::s_petList;
 
+// 遍历全局名单，检查这个角色在不在
+bool BasePet::isPetAlive(int roleToCheck) {
+    for (int i = 0; i < s_petList.size(); ++i) {
+        if (s_petList[i]->m_role == roleToCheck) {
+            return true; // 逮到了！他已经在屏幕上了！
+        }
+    }
+    return false; // 屏幕上没这个桌宠
+}
+
 // 初始化全局指针
 QSoundEffect* BasePet::s_bgmPlayer = nullptr;
+// 初始化记忆变量为空
+QString BasePet::s_currentBGMPath = "";
 // 全局万能点唱机
-void BasePet::playGlobalMusic(QString musicPath) {
+void BasePet::playGlobalMusic(QString musicPath) 
+{
+    //如果要求放的歌，就是当前正在放的歌，直接无视！让它接着奏乐接着舞！
+    if (s_currentBGMPath == musicPath)
+        return;
+    // 如果是新歌，更新记忆，准备切歌！
+    s_currentBGMPath = musicPath;
+
     if (!s_bgmPlayer) {
         s_bgmPlayer = new QSoundEffect();
         s_bgmPlayer->setLoopCount(QSoundEffect::Infinite); // 依然无限循环
@@ -164,8 +183,63 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
 
 // ================= 鼠标拖拽功能实现 =================
 
-void BasePet::mousePressEvent(QMouseEvent* event) {
-    if (event->button() == Qt::LeftButton) {
+void BasePet::mousePressEvent(QMouseEvent* event) 
+{
+	//右键点击，收回桌宠
+    if (event->button() == Qt::RightButton) 
+    {
+        //先把它从名单里除名（此时它已经不在这份名单里了）
+        s_petList.removeOne(this);
+        //BGM 智能回退系统 (寻找最后一个幸存的 Boss)
+        // ==========================================
+        bool isBossAlive = false; // 标记桌面是否还有 Boss
+        // 倒序遍历名单 (从最新召唤的开始往前找)
+        for (int i = s_petList.size() - 1; i >= 0; --i) 
+        {
+            BasePet* survivor = s_petList[i];
+
+            // 在这里列出你所有的 Boss！找到最新召唤的那一个，立刻切它的 BGM！
+            if (survivor->m_role == Role_Plantera && survivor->m_isAwakened) {
+                // 注意：世花必须是已经被点醒的状态才放音乐
+                BasePet::playGlobalMusic("tr-pet_material/Music-Plantera.wav");
+                isBossAlive = true;
+                break; // 找到了最新的 Boss，直接打断寻找！
+            }
+            else if (survivor->m_role == Role_SCal) {
+                BasePet::playGlobalMusic("tr-pet_material/Stained Brutal Calamity.wav");
+                isBossAlive = true;
+                break;
+            }
+            else if (survivor->m_role == Role_Mutant) 
+            {
+                BasePet::playGlobalMusic("tr-pet_material/rePrologue.wav"); 
+                isBossAlive = true;
+                break;
+            }
+            else if (survivor->m_role == Role_DoG) 
+            { 
+                BasePet::playGlobalMusic("tr-pet_material/Stained Brutal Calamity.wav");
+                isBossAlive = true;
+                break;
+            }
+            else if (survivor->m_role == Role_Skeletron)
+            {
+                BasePet::playGlobalMusic("tr-pet_material/Ezfic.wav");
+                isBossAlive = true;
+                break;
+            }
+        }
+        // 如果找了一大圈，发现桌面上NPC
+        if (!isBossAlive) 
+            // 切回白天肝疼小曲！
+            BasePet::playGlobalMusic("tr-pet_material/Music-Overworld_Day.wav");
+        //安全销毁这个宠物的窗口
+        this->deleteLater();
+        return;
+    }
+
+    if (event->button() == Qt::LeftButton) 
+    {
         m_isDragging = true;
         // 算出鼠标点下的位置和图片左上角的距离差
         m_dragPosition = event->globalPosition().toPoint() - this->frameGeometry().topLeft();
