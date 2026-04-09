@@ -152,19 +152,24 @@ trPet::~trPet()
     }
     BasePet::s_petList.clear();
 
-    if (BasePet::s_bgmPlayer) {
+    if (BasePet::s_bgmPlayer) 
+    {
+        QObject::disconnect(BasePet::s_bgmStatusConn);
         BasePet::s_bgmPlayer->stop();
         delete BasePet::s_bgmPlayer;
         BasePet::s_bgmPlayer = nullptr;
+        BasePet::s_currentBGMPath.clear();
     }
 
-    if (BasePet::s_reforgeEffect) {
+    if (BasePet::s_reforgeEffect) 
+    {
         BasePet::s_reforgeEffect->stop();
         delete BasePet::s_reforgeEffect;
         BasePet::s_reforgeEffect = nullptr;
     }
 
-    if (BasePet::s_coinEffect) {
+    if (BasePet::s_coinEffect) 
+    {
         BasePet::s_coinEffect->stop();
         delete BasePet::s_coinEffect;
         BasePet::s_coinEffect = nullptr;

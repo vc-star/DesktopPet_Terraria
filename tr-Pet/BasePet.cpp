@@ -30,6 +30,7 @@ bool BasePet::isPetAlive(PetRole roleToCheck) {
 QSoundEffect* BasePet::s_bgmPlayer = nullptr;
 // 初始化记忆变量为空
 QString BasePet::s_currentBGMPath = "";
+QMetaObject::Connection BasePet::s_bgmStatusConn;
 // 全局万能点唱机
 void BasePet::playGlobalMusic(const QString& musicPath) 
 {
@@ -41,24 +42,24 @@ void BasePet::playGlobalMusic(const QString& musicPath)
 
     if (!s_bgmPlayer) {
         s_bgmPlayer = new QSoundEffect();
-        s_bgmPlayer->setLoopCount(QSoundEffect::Infinite); // 依然无限循环
-        s_bgmPlayer->setVolume(0.3f);
-    }
-    else {
-        // 【核心操作】：如果点唱机已经存在，不管它在播什么，先给我强行闭嘴！
-        s_bgmPlayer->stop();
-        s_bgmPlayer->disconnect(); // 切断之前的加载监听，防止混乱
-    }
+        s_bgmPlayer->setLoopCount(QSoundEffect::Infinite);
+        s_bgmPlayer->setVolume(1.0f);
 
-    // 换上最新召唤的 Boss（或白天）的音乐磁带
+        // 只连一次
+        s_bgmStatusConn = QObject::connect(
+            s_bgmPlayer, &QSoundEffect::statusChanged,
+            s_bgmPlayer, []() {
+                if (!BasePet::s_bgmPlayer) return;
+                if (BasePet::s_bgmPlayer->status() == QSoundEffect::Ready) {
+                    BasePet::s_bgmPlayer->play();
+                }
+            }
+        );
+    }
+    s_bgmPlayer->stop();
+    // 不再调用 s_bgmPlayer->disconnect();
+
     s_bgmPlayer->setSource(QUrl::fromLocalFile(musicPath));
-
-    // 重新监听加载状态（防吞音效神技）
-    QObject::connect(s_bgmPlayer, &QSoundEffect::statusChanged, []() {
-        if (s_bgmPlayer->status() == QSoundEffect::Ready) {
-            s_bgmPlayer->play();
-        }
-        });
 
     // 如果加载得够快，直接开播
     if (s_bgmPlayer->status() == QSoundEffect::Ready) {
@@ -202,6 +203,13 @@ void BasePet::mousePressEvent(QMouseEvent* event)
 	//右键点击，收回桌宠
     if (event->button() == Qt::RightButton) 
     {
+        //在右键删除逻辑里先置位并停 timer/动画
+        m_isDeleting = true;
+
+        if (m_actionTimer) m_actionTimer->stop();
+        if (m_radarTimer)  m_radarTimer->stop();
+        if (m_moveAnimation && m_moveAnimation->state() == QAbstractAnimation::Running)
+            m_moveAnimation->stop();
         //先把它从名单里除名（此时它已经不在这份名单里了）
         s_petList.removeOne(this);
         //BGM 智能回退系统 (寻找最后一个幸存的 Boss)
@@ -243,7 +251,7 @@ void BasePet::mousePressEvent(QMouseEvent* event)
                 break;
             }
         }
-        // 如果找了一大圈，发现桌面上NPC
+        // 如果找了一大圈，发现桌面上只有NPC
         if (!isBossAlive) 
             // 切回白天肝疼小曲！
             BasePet::playGlobalMusic("tr-pet_material/Music-Overworld_Day.wav");
@@ -322,6 +330,7 @@ void BasePet::onClick()
 
         // 七秒后自动进二阶段
         QTimer::singleShot(7000, this, [=]() {
+            if (m_isDeleting) return;
             if (m_movie) {
                 m_movie->stop();
                 delete m_movie;
@@ -375,6 +384,7 @@ void BasePet::onClick()
 
         // 等待 1500 毫秒（1.5秒）后，执行一次隐藏操作。文字弹出来一会儿就会自己消失，做出游戏气泡的感觉
         QTimer::singleShot(1500, this, [=]() {
+            if (m_isDeleting) return;
             m_textLabel->hide();
             });
     }
@@ -408,6 +418,7 @@ void BasePet::onClick()
 
         // 1.5秒后自动隐藏并清空图片
         QTimer::singleShot(1500, this, [=]() {
+            if (m_isDeleting) return;
             m_textLabel->hide();
             m_textLabel->clear();
             });
@@ -445,6 +456,7 @@ void BasePet::onClick()
 
         // 12150毫秒后，隐藏、删掉动图、并把锁解开
         QTimer::singleShot(12150, this, [=]() {
+            if (m_isDeleting) return;
             m_textLabel->hide();
             if (m_textLabel->movie()) {
                 m_textLabel->movie()->stop();
@@ -482,6 +494,7 @@ void BasePet::onClick()
 
         // 蓄力 0.5 秒 (500ms)
         QTimer::singleShot(500, this, [=]() {
+            if (m_isDeleting) return;
             QTimer* dashTimer = new QTimer(this);
             connect(dashTimer, &QTimer::timeout, this, [=]() {
                 QPoint curPos = this->pos();
@@ -719,6 +732,7 @@ void BasePet::checkInteractions() {
 
                     // 3秒后自动清空图片
                     QTimer::singleShot(3000, this, [=]() {
+                        if (m_isDeleting) return;
                         m_textLabel->hide();
                         m_textLabel->clear(); // 清空图层，保持干净
                         });
