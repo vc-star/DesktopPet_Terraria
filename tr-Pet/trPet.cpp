@@ -145,15 +145,28 @@ trPet::trPet(QWidget* parent)
 
 trPet::~trPet()
 {
-    // 在程序关闭时执行：
-        for (BasePet* pet : BasePet::s_petList) {
-            pet->deleteLater(); // 销毁所有还在桌面的宠物
-        }
+    // 防止遍历过程中容器被析构回调修改，先拷贝一份
+    const auto pets = BasePet::s_petList;
+    for (BasePet* pet : pets) {
+        if (pet) pet->deleteLater();
+    }
     BasePet::s_petList.clear();
 
     if (BasePet::s_bgmPlayer) {
         BasePet::s_bgmPlayer->stop();
-        delete BasePet::s_bgmPlayer; // 释放点唱机内存
+        delete BasePet::s_bgmPlayer;
         BasePet::s_bgmPlayer = nullptr;
+    }
+
+    if (BasePet::s_reforgeEffect) {
+        BasePet::s_reforgeEffect->stop();
+        delete BasePet::s_reforgeEffect;
+        BasePet::s_reforgeEffect = nullptr;
+    }
+
+    if (BasePet::s_coinEffect) {
+        BasePet::s_coinEffect->stop();
+        delete BasePet::s_coinEffect;
+        BasePet::s_coinEffect = nullptr;
     }
 }

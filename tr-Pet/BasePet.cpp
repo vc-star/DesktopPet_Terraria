@@ -14,7 +14,7 @@
 QList<BasePet*> BasePet::s_petList;
 
 // 遍历全局名单，检查这个角色在不在
-bool BasePet::isPetAlive(int roleToCheck) {
+bool BasePet::isPetAlive(PetRole roleToCheck) {
     for (int i = 0; i < s_petList.size(); ++i) {
         if (s_petList[i]->m_role == roleToCheck) {
             return true; // 逮到了！他已经在屏幕上了！
@@ -28,7 +28,7 @@ QSoundEffect* BasePet::s_bgmPlayer = nullptr;
 // 初始化记忆变量为空
 QString BasePet::s_currentBGMPath = "";
 // 全局万能点唱机
-void BasePet::playGlobalMusic(QString musicPath) 
+void BasePet::playGlobalMusic(const QString& musicPath) 
 {
     //如果要求放的歌，就是当前正在放的歌，直接无视！让它接着奏乐接着舞！
     if (s_currentBGMPath == musicPath)
@@ -122,13 +122,6 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
 
         m_imageLabel->setPixmap(pix);
     }
-
-
-    //准备字幕框
-    m_textLabel = new QLabel(this);
-    m_textLabel->setAlignment(Qt::AlignCenter); // 让文字居中对齐
-    m_textLabel->hide(); // 默认隐藏，只有特定角色才显示出来
-
 
     //让本体的布局里只有图片，尺寸完全锁定，不偏移
     QVBoxLayout* layout = new QVBoxLayout(this);
@@ -355,7 +348,7 @@ void BasePet::onClick()
     if (m_role == Role_Goblin) 
     {
         // 专属的重铸音效（使用无敌的静态播放器）
-        static QSoundEffect* reforgeEffect = nullptr;
+        QSoundEffect* reforgeEffect = nullptr;
         if (!reforgeEffect) {
             reforgeEffect = new QSoundEffect();
             reforgeEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Item.wav"));
@@ -398,7 +391,7 @@ void BasePet::onClick()
     if (m_role == Role_TaxCollector) 
     {     
         //金币音效(【终极解法：静态播放器】只读取一次硬盘，完美解决加载延迟和没声音！)
-        static QSoundEffect* coinEffect = nullptr;
+        QSoundEffect* coinEffect = nullptr;
         if (!coinEffect) {
             coinEffect = new QSoundEffect();
             coinEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Coin.wav"));
