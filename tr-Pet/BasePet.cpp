@@ -106,7 +106,8 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     if (imagePath.endsWith(".gif", Qt::CaseInsensitive)) {
         m_movie = new QMovie(imagePath, QByteArray(), this);
         m_movie->start(); // 先启动一下才能拿到尺寸
-
+        // 等待第一帧解码完毕，确保绝不会获取到空尺寸！
+        m_movie->jumpToFrame(0);
         // 拿到 GIF 的原始比例，然后智能缩小到 targetSize，不变形
         QSize originalSize = m_movie->currentImage().size();
         if (!originalSize.isEmpty()) {
