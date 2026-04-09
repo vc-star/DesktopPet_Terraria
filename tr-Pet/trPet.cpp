@@ -3,9 +3,6 @@
 #include <QPushButton>
 #include <QString> // 确保引入了QString，Windows用GBK 编码，而现代代码通常用UTF-8，之前出现了乱码
 
-//加音效
-#include <QUrl>
-#include <QSoundEffect>
 
 trPet::trPet(QWidget* parent)
     : QMainWindow(parent)

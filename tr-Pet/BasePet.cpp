@@ -1,6 +1,5 @@
 ﻿#include "BasePet.h"
 #include <QVBoxLayout>
-#include <QApplication>
 #include <QScreen>
 #include <QRandomGenerator>
 #include <QEasingCurve>
@@ -9,7 +8,6 @@
 #include <QPropertyAnimation> // 用于突变体冲刺残影淡出特效
 //加音效
 #include <QUrl>
-#include <QSoundEffect>
 
 QList<BasePet*> BasePet::s_petList;
 
