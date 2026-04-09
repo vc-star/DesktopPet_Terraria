@@ -13,6 +13,9 @@
 
 QList<BasePet*> BasePet::s_petList;
 
+QSoundEffect* BasePet::s_reforgeEffect = nullptr;
+QSoundEffect* BasePet::s_coinEffect = nullptr;
+
 // 遍历全局名单，检查这个角色在不在
 bool BasePet::isPetAlive(PetRole roleToCheck) {
     for (int i = 0; i < s_petList.size(); ++i) {
@@ -348,13 +351,12 @@ void BasePet::onClick()
     if (m_role == Role_Goblin) 
     {
         // 专属的重铸音效（使用无敌的静态播放器）
-        QSoundEffect* reforgeEffect = nullptr;
-        if (!reforgeEffect) {
-            reforgeEffect = new QSoundEffect();
-            reforgeEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Item.wav"));
-            reforgeEffect->setVolume(1.0f);
+        if (!s_reforgeEffect) {
+            s_reforgeEffect = new QSoundEffect();
+            s_reforgeEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Item.wav"));
+            s_reforgeEffect->setVolume(1.0f);
         }
-        reforgeEffect->play();
+        s_reforgeEffect->play();
 
         //准备一个“负面词库”
         QStringList badWords = {
@@ -391,13 +393,12 @@ void BasePet::onClick()
     if (m_role == Role_TaxCollector) 
     {     
         //金币音效(【终极解法：静态播放器】只读取一次硬盘，完美解决加载延迟和没声音！)
-        QSoundEffect* coinEffect = nullptr;
-        if (!coinEffect) {
-            coinEffect = new QSoundEffect();
-            coinEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Coin.wav"));
-            coinEffect->setVolume(1.0f);
+        if (!s_coinEffect) {
+            s_coinEffect = new QSoundEffect();
+            s_coinEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Coin.wav"));
+            s_coinEffect->setVolume(1.0f);
         }
-        coinEffect->play();
+        s_coinEffect->play();
 
         QPixmap moneyPix("tr-pet_material/coin.png");
         moneyPix = moneyPix.scaledToHeight(40, Qt::SmoothTransformation);
@@ -582,6 +583,8 @@ void BasePet::enterEvent(QEnterEvent* event) {
 }
 void BasePet::leaveEvent(QEvent* event)
 {
+    if (m_role == Role_Operator && this->property("isBagPlaying").toBool()) 
+        return;
     if (m_role == Role_DoG)
         return;
     if (m_role == Role_Plantera && m_isPhase2) {
