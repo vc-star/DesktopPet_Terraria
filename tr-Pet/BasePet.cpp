@@ -209,8 +209,7 @@ void BasePet::mousePressEvent(QMouseEvent* event)
         if (m_radarTimer)  m_radarTimer->stop();
         if (m_moveAnimation && m_moveAnimation->state() == QAbstractAnimation::Running)
             m_moveAnimation->stop();
-        //先把它从名单里除名（此时它已经不在这份名单里了）
-        s_petList.removeOne(this);
+
         //BGM 智能回退系统 (寻找最后一个幸存的 Boss)
         // ==========================================
         bool isBossAlive = false; // 标记桌面是否还有 Boss
