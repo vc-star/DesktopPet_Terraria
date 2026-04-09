@@ -102,7 +102,7 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
         targetSize = 180;
     // 判断是动图还是静图，分别处理
     if (imagePath.endsWith(".gif", Qt::CaseInsensitive)) {
-        m_movie = new QMovie(imagePath);
+        m_movie = new QMovie(imagePath, QByteArray(), this);
         m_movie->start(); // 先启动一下才能拿到尺寸
 
         // 拿到 GIF 的原始比例，然后智能缩小到 targetSize，不变形
@@ -129,25 +129,43 @@ BasePet::BasePet(PetRole role, const QString& imagePath, QWidget* parent)
     m_textLabel->setAlignment(Qt::AlignCenter); // 让文字居中对齐
     m_textLabel->hide(); // 默认隐藏，只有特定角色才显示出来
 
-    //把它铺满我们这个透明的小窗口
-    //决定文字在上面还是下面！
+
+    //让本体的布局里只有图片，尺寸完全锁定，不偏移
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(5);
-    // 判断是谁
-    if (m_role == Role_Goblin || m_role == Role_Nurse || m_role == Role_ArmsDealer)
-    {
-        layout->addWidget(m_textLabel);  // 先文字
-        layout->addWidget(m_imageLabel); // 再图片
-    }
-    else
-    {
-        layout->addWidget(m_imageLabel); // 先图片
-        layout->addWidget(m_textLabel);  // 再文字
-    }
+    layout->addWidget(m_imageLabel);
 
-    //默认先给个 100x100 的大小（以后可以根据是BOSS还是NPC动态调整）
-    //resize(100, 100);依然是图片变形问题
+    // 把文字/表情框当成独立悬浮层
+    m_textLabel = new QLabel(this); // this认爹，防止野指针
+    m_textLabel->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput);
+    m_textLabel->setAttribute(Qt::WA_TranslucentBackground);
+    m_textLabel->setAlignment(Qt::AlignCenter);
+    m_textLabel->hide();
+
+    // 挂载一个专属的追踪定时器，每帧同步文字/表情的位置
+    QTimer* textTracker = new QTimer(this);
+    connect(textTracker, &QTimer::timeout, this, [=]() {
+        if (!m_textLabel->isHidden()) {
+            m_textLabel->adjustSize(); // 确保框能包住文字或动图
+            QRect petRect = this->geometry();
+            int popX = petRect.center().x() - m_textLabel->width() / 2;
+            int popY = 0;
+
+            // 哥布林、护士、军火商、强盗、操作员、税收官的表情在头顶冒出
+            if (m_role == Role_Goblin || m_role == Role_Nurse || m_role == Role_ArmsDealer ||
+                m_role == Role_Bandit || m_role == Role_TaxCollector || m_role == Role_Operator) {
+                popY = petRect.top() - m_textLabel->height() - 5;
+            }
+            // 其他角色（如世纪之花）在脚底冒出
+            else {
+                popY = petRect.bottom() + 5;
+            }
+            m_textLabel->move(popX, popY);
+        }
+        });
+    textTracker->start(16); // 60FPS实时刷新位置
+
+
 
     if (m_role == Role_DoG) 
     {
@@ -297,8 +315,7 @@ void BasePet::onClick()
         m_imageLabel->clear();
 
         // 加载一阶段动图
-        m_movie = new QMovie("tr-pet_material/plantera1.gif");
-        m_movie->setParent(this);
+        m_movie = new QMovie("tr-pet_material/plantera1.gif", QByteArray(), this);
         m_movie->start(); // 必须先 start 才能拿到正确尺寸！
 
         QSize size1 = m_movie->currentImage().size();
@@ -337,10 +354,10 @@ void BasePet::onClick()
     // 如果被点到的是哥布林工匠
     if (m_role == Role_Goblin) 
     {
-        // 【新增】：专属的重铸音效（使用无敌的静态播放器）
+        // 专属的重铸音效（使用无敌的静态播放器）
         static QSoundEffect* reforgeEffect = nullptr;
         if (!reforgeEffect) {
-            reforgeEffect = new QSoundEffect(this);
+            reforgeEffect = new QSoundEffect();
             reforgeEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Item.wav"));
             reforgeEffect->setVolume(1.0f);
         }
@@ -383,35 +400,23 @@ void BasePet::onClick()
         //金币音效(【终极解法：静态播放器】只读取一次硬盘，完美解决加载延迟和没声音！)
         static QSoundEffect* coinEffect = nullptr;
         if (!coinEffect) {
-            coinEffect = new QSoundEffect(this);
+            coinEffect = new QSoundEffect();
             coinEffect->setSource(QUrl::fromLocalFile("tr-pet_material/Coin.wav"));
             coinEffect->setVolume(1.0f);
         }
         coinEffect->play();
 
-        // 创建一个悬浮的纯净画框（无边框、置顶、透明背景）
-        QLabel* moneyLabel = new QLabel();
-        moneyLabel->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput);
-        moneyLabel->setAttribute(Qt::WA_TranslucentBackground);
-        // 加载coin图片
         QPixmap moneyPix("tr-pet_material/coin.png");
-        // 稍微缩放一下
         moneyPix = moneyPix.scaledToHeight(40, Qt::SmoothTransformation);
-        moneyLabel->setPixmap(moneyPix);
-        moneyLabel->adjustSize(); // 让画框包裹住图片
-        // 创建一个实时追踪的定时器
-        QTimer* tracker = new QTimer(moneyLabel); // 定时器跟着画框一起销毁
-        connect(tracker, &QTimer::timeout, this, [=]() {
-            // 每秒刷新 60 次，算出 NPC 现在的绝对坐标
-            QRect petRect = this->geometry();
-            int popX = petRect.center().x() - moneyLabel->width() / 2;
-            int popY = petRect.top() - moneyLabel->height() - 10; // 稳稳漂浮在头顶外
-            moneyLabel->move(popX, popY);
+
+        m_textLabel->setPixmap(moneyPix);
+        m_textLabel->show();
+
+        // 1.5秒后自动隐藏并清空图片
+        QTimer::singleShot(1500, this, [=]() {
+            m_textLabel->hide();
+            m_textLabel->clear();
             });
-        tracker->start(16); // 60帧追踪一次，极致丝滑
-        moneyLabel->show();
-        //1.5秒后，系统自动把这个画框销毁！
-        QTimer::singleShot(1500, moneyLabel, &QLabel::deleteLater);
 
         return;
     }
@@ -419,36 +424,42 @@ void BasePet::onClick()
     //如果被点到的是操作员
     if (m_role == Role_Operator)
     {
-        QLabel* bagLabel = new QLabel();
-        bagLabel->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput);
-        bagLabel->setAttribute(Qt::WA_TranslucentBackground);
-        QMovie* bagMovie = new QMovie("tr-pet_material/treasurebag.gif");
-        bagMovie->setParent(bagLabel);
-        // 智能等比缩放！
-        bagMovie->jumpToFrame(0); // 先跳到第一帧拿到真实大小
+        // 【新增第1步】：进门先查锁！如果锁着（正在播放），直接return，不理她！
+        if (this->property("isBagPlaying").toBool()) return;
+
+        // 【新增第2步】：没锁的话，现在开始播放，马上把锁挂上！
+        this->setProperty("isBagPlaying", true);
+
+        // 清理旧的 GIF（防止内存泄漏）
+        if (m_textLabel->movie()) {
+            m_textLabel->movie()->deleteLater();
+        }
+
+        // 把宝藏袋 GIF 塞进统一的悬浮层 m_textLabel
+        QMovie* bagMovie = new QMovie("tr-pet_material/treasurebag.gif", QByteArray(), this);
+        bagMovie->jumpToFrame(0);
         QSize originalSize = bagMovie->currentImage().size();
-        QSize newSize(60, 60); // 默认限制范围
+        QSize newSize(60, 60);
         if (originalSize.isValid()) {
-            // 保持真实比例，把最大边长限制在 60 像素
             newSize = originalSize.scaled(100, 100, Qt::KeepAspectRatio);
         }
         bagMovie->setScaledSize(newSize);
-        bagLabel->setMovie(bagMovie);
-        bagMovie->start();
-        // 画框也根据真实比例调整大小
-        bagLabel->resize(newSize);
 
-        QTimer* tracker = new QTimer(bagLabel);
-        connect(tracker, &QTimer::timeout, this, [=]() {
-            QRect petRect = this->geometry();
-            // 用动态算出来的新宽度来居中
-            int popX = petRect.center().x() - newSize.width() / 2;
-            int popY = petRect.top() - newSize.height() - 10;
-            bagLabel->move(popX, popY);
+        m_textLabel->setMovie(bagMovie);
+        bagMovie->start();
+        m_textLabel->show();
+
+        // 12150毫秒后，隐藏、删掉动图、并把锁解开
+        QTimer::singleShot(12150, this, [=]() {
+            m_textLabel->hide();
+            if (m_textLabel->movie()) {
+                m_textLabel->movie()->stop();
+                m_textLabel->movie()->deleteLater();
+                m_textLabel->setMovie(nullptr); // 清空动图
+            }
+            this->setProperty("isBagPlaying", false); // 解锁
             });
-        tracker->start(16);
-        bagLabel->show();
-        QTimer::singleShot(30000, bagLabel, &QLabel::deleteLater);
+
         return;
     }
 
@@ -705,26 +716,16 @@ void BasePet::checkInteractions() {
                 else if (m_role == Role_Bandit)
                 {
                     // 强盗：头顶爆出金币图片，3秒后消失
-                    QLabel* moneyLabel = new QLabel();
-                    moneyLabel->setWindowFlags(Qt::FramelessWindowHint | Qt::Tool | Qt::WindowStaysOnTopHint | Qt::WindowTransparentForInput);
-                    moneyLabel->setAttribute(Qt::WA_TranslucentBackground);
                     QPixmap moneyPix("tr-pet_material/gold.png");
                     moneyPix = moneyPix.scaledToHeight(40, Qt::SmoothTransformation);
-                    moneyLabel->setPixmap(moneyPix);
-                    moneyLabel->adjustSize();
+                    m_textLabel->setPixmap(moneyPix);
+                    m_textLabel->show();
 
-                    QTimer* tracker = new QTimer(moneyLabel);
-                    connect(tracker, &QTimer::timeout, this, [=]() {
-                        QRect petRect = this->geometry();
-                        int popX = petRect.center().x() - moneyLabel->width() / 2;
-                        int popY = petRect.top() - moneyLabel->height() - 10;
-                        moneyLabel->move(popX, popY);
+                    // 3秒后自动清空图片
+                    QTimer::singleShot(3000, this, [=]() {
+                        m_textLabel->hide();
+                        m_textLabel->clear(); // 清空图层，保持干净
                         });
-                    tracker->start(16);
-
-                    moneyLabel->show();
-                    // 2秒后自动销毁画框
-                    QTimer::singleShot(2000, moneyLabel, &QLabel::deleteLater);
                 }
             }
         }

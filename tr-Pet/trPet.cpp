@@ -145,4 +145,15 @@ trPet::trPet(QWidget* parent)
 
 trPet::~trPet()
 {
+    // 在程序关闭时执行：
+        for (BasePet* pet : BasePet::s_petList) {
+            pet->deleteLater(); // 销毁所有还在桌面的宠物
+        }
+    BasePet::s_petList.clear();
+
+    if (BasePet::s_bgmPlayer) {
+        BasePet::s_bgmPlayer->stop();
+        delete BasePet::s_bgmPlayer; // 释放点唱机内存
+        BasePet::s_bgmPlayer = nullptr;
+    }
 }
