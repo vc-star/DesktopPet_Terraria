@@ -218,6 +218,8 @@ void BasePet::mousePressEvent(QMouseEvent* event)
         {
             BasePet* survivor = s_petList[i];
 
+            if (survivor == this) continue;
+
             // 在这里列出你所有的 Boss！找到最新召唤的那一个，立刻切它的 BGM！
             if (survivor->m_role == Role_Plantera && survivor->m_isAwakened) {
                 // 注意：世花必须是已经被点醒的状态才放音乐
@@ -238,7 +240,7 @@ void BasePet::mousePressEvent(QMouseEvent* event)
             }
             else if (survivor->m_role == Role_DoG) 
             { 
-                BasePet::playGlobalMusic("tr-pet_material/Stained Brutal Calamity.wav");
+                BasePet::playGlobalMusic("tr-pet_material/Universal_Collapse.wav");
                 isBossAlive = true;
                 break;
             }
@@ -682,16 +684,17 @@ void BasePet::checkInteractions() {
     // ================= 强盗与哥布林 =================
     if (m_role == Role_Bandit || m_role == Role_Goblin) {
         bool foundTarget = false;
-        // 强盗找哥布林，哥布林找强盗
         PetRole targetRole = (m_role == Role_Bandit) ? Role_Goblin : Role_Bandit;
+
         for (BasePet* other : s_petList) {
             if (other != this && other->getRole() == targetRole) {
                 QPoint myCenter = this->geometry().center();
                 QPoint hisCenter = other->geometry().center();
                 int distance = (myCenter - hisCenter).manhattanLength();
+
                 if (distance < 200) {
                     foundTarget = true;
-                    // 判断左右并转身
+
                     bool shouldFlip = (hisCenter.x() > myCenter.x());
                     if (m_isFlipped != shouldFlip) {
                         m_isFlipped = shouldFlip;
@@ -701,58 +704,62 @@ void BasePet::checkInteractions() {
                 }
             }
         }
-        //检查他们是不是“已经在附近了”
+
         bool wasNear = this->property("isNear").toBool();
+
         if (foundTarget) {
-            // 如果是“刚靠近”（之前不在附近）
+            // 进入靠近状态
             if (!wasNear) {
-                this->setProperty("isNear", true); // 记录状态：已经靠近了，防止重复触发
-                if (m_role == Role_Goblin)
-                {
-                    // 哥布林：头顶冒出生气的 GIF，持续显示
-                    m_textLabel->setText("");
-                    QMovie* angryMovie = m_textLabel->movie();
-                    if (!angryMovie) {
-                        angryMovie = new QMovie("tr-pet_material/Emotion_Anger.gif", QByteArray(), this);
-                        angryMovie->setScaledSize(QSize(60, 60)); // 根据你的生气图片调整大小
-                        m_textLabel->setMovie(angryMovie);
-                    }
+                this->setProperty("isNear", true);
+            }
+
+            if (m_role == Role_Goblin) {
+                // 关键：靠近期间持续保证“生气GIF”存在且在播放
+                QMovie* angryMovie = m_textLabel->movie();
+                if (!angryMovie) {
+                    angryMovie = new QMovie("tr-pet_material/Emotion_Anger.gif", QByteArray(), this);
+                    angryMovie->setScaledSize(QSize(60, 60));
+                    m_textLabel->setMovie(angryMovie);
+                }
+                if (angryMovie->state() != QMovie::Running) {
                     angryMovie->start();
+                }
+                if (m_textLabel->isHidden()) {
                     m_textLabel->show();
                 }
-                else if (m_role == Role_Bandit)
-                {
-                    // 强盗：头顶爆出金币图片，3秒后消失
+            }
+            else if (m_role == Role_Bandit) {
+                // 强盗金币：仅“刚靠近”触发一次
+                if (!wasNear) {
                     QPixmap moneyPix("tr-pet_material/gold.png");
                     moneyPix = moneyPix.scaledToHeight(40, Qt::SmoothTransformation);
                     m_textLabel->setPixmap(moneyPix);
                     m_textLabel->show();
 
-                    // 3秒后自动清空图片
-                    QTimer::singleShot(3000, this, [=]() {
+                    QTimer::singleShot(5000, this, [=]() {
                         if (m_isDeleting) return;
-                        m_textLabel->hide();
-                        m_textLabel->clear(); // 清空图层，保持干净
+                        // 只有在已经走远时才清掉，避免还在靠近时被误清
+                        if (!this->property("isNear").toBool()) {
+                            m_textLabel->hide();
+                            m_textLabel->clear();
+                        }
                         });
                 }
             }
         }
-        else
-        {
-            // 走远了
-            if (wasNear)
-            {
-                this->setProperty("isNear", false); // 状态重置为“远离”
-                // 哥布林消气，隐藏生气图片
-                if (m_role == Role_Goblin)
-                {
+        else {
+            // 走远：重置状态
+            if (wasNear) {
+                this->setProperty("isNear", false);
+
+                if (m_role == Role_Goblin) {
                     m_textLabel->hide();
-                    if (m_textLabel->movie())
+                    if (m_textLabel->movie()) {
                         m_textLabel->movie()->stop();
+                    }
                 }
-                // 转头，不理对方
-                if (m_isFlipped)
-                {
+
+                if (m_isFlipped) {
                     m_isFlipped = false;
                     updateImageFlip();
                 }
