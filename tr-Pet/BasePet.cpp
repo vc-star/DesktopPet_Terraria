@@ -600,9 +600,16 @@ void BasePet::leaveEvent(QEvent* event)
         return;
     if (m_role == Role_DoG)
         return;
-    if (m_role == Role_Plantera && m_isPhase2) {
+    if (m_role == Role_Plantera && m_isPhase2)
         return;
-    }
+    if (m_role == Role_Nurse || m_role == Role_ArmsDealer)
+        return;
+    if (m_role == Role_TaxCollector)
+        return;
+    if (m_role == Role_Goblin)
+        return;
+    if (m_role == Role_Bandit && this->property("banditGoldPopupActive").toBool())
+        return;
     m_textLabel->hide();
 }
 
@@ -736,13 +743,17 @@ void BasePet::checkInteractions() {
                     m_textLabel->setPixmap(moneyPix);
                     m_textLabel->show();
 
-                    QTimer::singleShot(5000, this, [=]() {
+                    //标记金币弹窗激活
+                    this->setProperty("banditGoldPopupActive", true);
+
+                    QTimer::singleShot(3000, this, [=]() {
                         if (m_isDeleting) return;
-                        // 只有在已经走远时才清掉，避免还在靠近时被误清
-                        if (!this->property("isNear").toBool()) {
+
                             m_textLabel->hide();
                             m_textLabel->clear();
-                        }
+
+                        // 取消激活标记
+                        this->setProperty("banditGoldPopupActive", false);
                         });
                 }
             }
@@ -750,7 +761,9 @@ void BasePet::checkInteractions() {
         else {
             // 走远：重置状态
             if (wasNear) {
+
                 this->setProperty("isNear", false);
+                this->setProperty("banditGoldPopupActive", false);
 
                 if (m_role == Role_Goblin) {
                     m_textLabel->hide();
